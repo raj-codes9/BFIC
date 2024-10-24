@@ -114,18 +114,18 @@ if ticker:
             summary = classify_investment(ratios)
             
           # After calculating ratios
-st.subheader(f"Analysis for {ticker.upper()}:")
-net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
-debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if ratios['Debt-to-Equity Ratio'] is not None else "N/A (No Equity)"
-return_on_equity = ratios['Return on Equity (ROE)'] if ratios['Return on Equity (ROE)'] is not None else "N/A (No Equity)"
-current_ratio = ratios['Current Ratio'] if ratios['Current Ratio'] is not None else "N/A"
-free_cash_flow = ratios['Free Cash Flow'] if not pd.isna(ratios['Free Cash Flow']) else 0.00
-
-st.write(f"Net Profit Margin: {net_profit_margin:.2f}")
-st.write(f"Debt-to-Equity Ratio: {debt_to_equity_ratio}")
-st.write(f"Return on Equity: {return_on_equity}")
-st.write(f"Current Ratio: {current_ratio}")
-st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
+            st.subheader(f"Analysis for {ticker.upper()}:")
+            net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
+            debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if ratios['Debt-to-Equity Ratio'] is not None else "N/A (No Equity)"
+            return_on_equity = ratios['Return on Equity (ROE)'] if ratios['Return on Equity (ROE)'] is not None else "N/A (No Equity)"
+            current_ratio = ratios['Current Ratio'] if ratios['Current Ratio'] is not None else "N/A"
+            free_cash_flow = ratios['Free Cash Flow'] if not pd.isna(ratios['Free Cash Flow']) else 0.00
+            
+            st.write(f"Net Profit Margin: {net_profit_margin:.2f}")
+            st.write(f"Debt-to-Equity Ratio: {debt_to_equity_ratio}")
+            st.write(f"Return on Equity: {return_on_equity}")
+            st.write(f"Current Ratio: {current_ratio}")
+            st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
 
 
         else:
