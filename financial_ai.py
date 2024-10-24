@@ -42,10 +42,11 @@ def analyze_financials(income_df, balance_df, cashflow_df):
     net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
     revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
 
-    total_debt = pd.to_numeric(balance_df.get('Total Debt', balance_df.get('Long Term Debt', 0)), errors='coerce')
-    total_equity = pd.to_numeric(balance_df.get('Total Equity', 0), errors='coerce')
-    total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Prevent division by zero
-    free_cash_flow = pd.to_numeric(cashflow_df.get('Free Cash Flow', 0), errors='coerce')
+    # Use .get method to prevent key errors
+    total_debt = pd.to_numeric(balance_df['Total Debt'].iloc[0] if 'Total Debt' in balance_df else 0, errors='coerce')
+    total_equity = pd.to_numeric(balance_df['Total Equity'].iloc[0] if 'Total Equity' in balance_df else 0, errors='coerce')
+    total_assets = pd.to_numeric(balance_df['Total Assets'].iloc[0] if 'Total Assets' in balance_df else 1, errors='coerce')  # Prevent division by zero
+    free_cash_flow = pd.to_numeric(cashflow_df['Free Cash Flow'].iloc[0] if 'Free Cash Flow' in cashflow_df else 0, errors='coerce')
 
     # Check values before calculations
     st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
