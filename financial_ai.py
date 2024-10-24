@@ -72,27 +72,28 @@ def analyze_financials(income_df, balance_df, cashflow_df):
 def classify_investment(ratios):
     summary = []
     
-    if ratios['Net Profit Margin'] < 0.1:
+    if ratios['Net Profit Margin'] is not None and ratios['Net Profit Margin'] < 0.1:
         summary.append("The company's profit margins are relatively low, meaning it keeps a small portion of its revenue as profit. This could indicate inefficiencies or significant operating expenses.")
     else:
         summary.append("The company has a healthy net profit margin, retaining a significant portion of its revenue as profit. This reflects well on its operational efficiency.")
-
-    if ratios['Debt-to-Equity Ratio'] > 1.0:
+    
+    # Check for None before comparing
+    if ratios['Debt-to-Equity Ratio'] is not None and ratios['Debt-to-Equity Ratio'] > 1.0:
         summary.append("The company is highly leveraged, with significant debt compared to equity. This could pose a risk during downturns if it struggles to meet debt obligations.")
     else:
         summary.append("The company's debt levels are manageable relative to its equity, suggesting lower financial risk in terms of debt repayment.")
-
-    if ratios['Return on Equity (ROE)'] < 0.15:
+    
+    if ratios['Return on Equity (ROE)'] is not None and ratios['Return on Equity (ROE)'] < 0.15:
         summary.append("The return on equity is below industry standards, implying the company is not generating sufficient profits from its equity base.")
     else:
         summary.append("The company is generating a strong return on equity, showing efficient use of its capital to generate profit.")
-
-    if ratios['Current Ratio'] < 1.5:
+    
+    if ratios['Current Ratio'] is not None and ratios['Current Ratio'] < 1.5:
         summary.append("The company's current ratio indicates potential liquidity concerns. It may not have enough current assets to cover its short-term liabilities.")
     else:
         summary.append("The company appears to have a comfortable liquidity position, with enough assets to cover its short-term obligations.")
-
-    if ratios['Free Cash Flow'] < 0:
+    
+    if ratios['Free Cash Flow'] is not None and ratios['Free Cash Flow'] < 0:
         summary.append("The company's free cash flow is negative, which may indicate struggles in generating enough cash from operations to fund its activities.")
     else:
         summary.append("The company has a healthy positive free cash flow, which is a good indicator of financial health and the ability to invest in growth opportunities.")
@@ -100,7 +101,6 @@ def classify_investment(ratios):
     # Combine the list into a cohesive paragraph
     investment_summary = " ".join(summary)
     return investment_summary
-
 
 # Streamlit web app
 st.title("AI Financial Investment Analyzer")
