@@ -6,35 +6,35 @@ import requests
 api_key = 's561z0EFing83mxqzi8E2J7s68CVbaXV'
 
 # Get financial data for a company
-def get_financials(ticker):
-    try:
-        url_income = f'https://financialmodelingprep.com/api/v3/financials/income-statement/{ticker}?apikey={api_key}'
-        income_data = requests.get(url_income).json()
-        
-        url_balance = f'https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/{ticker}?apikey={api_key}'
-        balance_data = requests.get(url_balance).json()
-        
-        url_cash_flow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
-        cashflow_data = requests.get(url_cash_flow).json()
-        
-        # Debugging output to check data structures
-        st.write("Income Data:", income_data)
-        st.write("Balance Data:", balance_data)
-        st.write("Cash Flow Data:", cashflow_data)
+def analyze_financials(income_df, balance_df, cashflow_df):
+    # Access values carefully and handle missing data
+    net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
+    revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
 
-        income_df = pd.DataFrame(income_data['financials'])
-        balance_df = pd.DataFrame(balance_data['financials'])
-        cashflow_df = pd.DataFrame(cashflow_data['financials'])
+    # Ensure individual values for total debt and total equity
+    total_debt = pd.to_numeric(balance_df['Total Debt'].iloc[0], errors='coerce') if 'Total Debt' in balance_df else 0
+    total_equity = pd.to_numeric(balance_df['Total Equity'].iloc[0], errors='coerce') if 'Total Equity' in balance_df else 0
+    total_assets = pd.to_numeric(balance_df['Total Assets'].iloc[0], errors='coerce') if 'Total Assets' in balance_df else 1  # Prevent division by zero
+    free_cash_flow = pd.to_numeric(cashflow_df['Free Cash Flow'].iloc[0], errors='coerce') if 'Free Cash Flow' in cashflow_df else 0
 
-        # Check the contents of the DataFrames
-        st.write("Income DataFrame:", income_df)
-        st.write("Balance DataFrame:", balance_df)
-        st.write("Cash Flow DataFrame:", cashflow_df)
+    # Check values before calculations
+    st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
 
-        return income_df, balance_df, cashflow_df
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        return None, None, None
+    ratios = {}
+    ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
+
+    # Avoid dividing by zero for debt-to-equity and ROE
+    if total_equity != 0:
+        ratios['Debt-to-Equity Ratio'] = total_debt / total_equity
+        ratios['Return on Equity (ROE)'] = net_income / total_equity
+    else:
+        ratios['Debt-to-Equity Ratio'] = None  # Or some meaningful message
+        ratios['Return on Equity (ROE)'] = None
+
+    ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else None
+    ratios['Free Cash Flow'] = free_cash_flow
+
+    return ratios
         
 # Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
