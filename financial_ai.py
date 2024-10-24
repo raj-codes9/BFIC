@@ -10,13 +10,13 @@ def get_financials(ticker):
     try:
         url_income = f'https://financialmodelingprep.com/api/v3/financials/income-statement/{ticker}?apikey={api_key}'
         income_data = requests.get(url_income).json()
-
+        
         url_balance = f'https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/{ticker}?apikey={api_key}'
         balance_data = requests.get(url_balance).json()
-
+        
         url_cash_flow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
         cashflow_data = requests.get(url_cash_flow).json()
-
+        
         # Print the data to check structure
         st.write("Income Data:", income_data)
         st.write("Balance Data:", balance_data)
@@ -26,34 +26,34 @@ def get_financials(ticker):
         balance_df = pd.DataFrame(balance_data['financials'])
         cashflow_df = pd.DataFrame(cashflow_data['financials'])
 
+        st.write("Income DataFrame:", income_df)
+        st.write("Balance DataFrame:", balance_df)
+        st.write("Cash Flow DataFrame:", cashflow_df)
+
         return income_df, balance_df, cashflow_df
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return None, None, None
-
-# Analyze financials
+        
 # Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
-    income_df['Net Income'] = pd.to_numeric(income_df['Net Income'], errors='coerce')
-    income_df['Revenue'] = pd.to_numeric(income_df['Revenue'], errors='coerce')
-
-    # Safely retrieve values using .get()
+    # Check if values exist
+    net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
+    revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
     total_debt = pd.to_numeric(balance_df.get('Total Debt', balance_df.get('Long Term Debt', 0)), errors='coerce')
     total_equity = pd.to_numeric(balance_df.get('Total Equity', 0), errors='coerce')
     total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Default to 1 to avoid division by zero
     free_cash_flow = pd.to_numeric(cashflow_df.get('Free Cash Flow', 0), errors='coerce')
 
     ratios = {}
-    ratios['Net Profit Margin'] = income_df['Net Income'].iloc[0] / income_df['Revenue'].iloc[0] if income_df['Revenue'].iloc[0] != 0 else 0
+    ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
     ratios['Debt-to-Equity Ratio'] = total_debt / total_equity if total_equity != 0 else 0
-    ratios['Return on Equity (ROE)'] = income_df['Net Income'].iloc[0] / total_equity if total_equity != 0 else 0
+    ratios['Return on Equity (ROE)'] = net_income / total_equity if total_equity != 0 else 0
     ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else 0
     ratios['Free Cash Flow'] = free_cash_flow
 
     return ratios
-
-
-# Classify investment decision
+    
 # Classify investment decision
 def classify_investment(ratios):
     investment_summary = "Investment is Good"
@@ -88,7 +88,7 @@ if ticker:
             st.write(f"Return on Equity: {ratios['Return on Equity (ROE)']:.2f}")
             st.write(f"Current Ratio: {ratios['Current Ratio']:.2f}")
             st.write(f"Free Cash Flow: {ratios['Free Cash Flow']:.2f}")
-            st.write(f"Investment Decision: **{summary}**")
+
         else:
             st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
     except Exception as e:
