@@ -7,18 +7,33 @@ api_key = 's561z0EFing83mxqzi8E2J7s68CVbaXV'
 
 # Get financial data for a company
 def get_financials(ticker):
-    url_income = f'https://financialmodelingprep.com/api/v3/financials/income-statement/{ticker}?apikey={api_key}'
-    income_data = requests.get(url_income).json()
-    url_balance = f'https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/{ticker}?apikey={api_key}'
-    balance_data = requests.get(url_balance).json()
-    url_cash_flow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
-    cashflow_data = requests.get(url_cash_flow).json()
+    try:
+        url_income = f'https://financialmodelingprep.com/api/v3/financials/income-statement/{ticker}?apikey={api_key}'
+        income_data = requests.get(url_income).json()
+        if 'Error Message' in income_data:
+            st.error("API error: Could not retrieve income statement.")
+            return None, None, None
+        
+        url_balance = f'https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/{ticker}?apikey={api_key}'
+        balance_data = requests.get(url_balance).json()
+        if 'Error Message' in balance_data:
+            st.error("API error: Could not retrieve balance sheet.")
+            return None, None, None
+        
+        url_cash_flow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
+        cashflow_data = requests.get(url_cash_flow).json()
+        if 'Error Message' in cashflow_data:
+            st.error("API error: Could not retrieve cash flow statement.")
+            return None, None, None
 
-    income_df = pd.DataFrame(income_data['financials'])
-    balance_df = pd.DataFrame(balance_data['financials'])
-    cashflow_df = pd.DataFrame(cashflow_data['financials'])
-    
-    return income_df, balance_df, cashflow_df
+        income_df = pd.DataFrame(income_data['financials'])
+        balance_df = pd.DataFrame(balance_data['financials'])
+        cashflow_df = pd.DataFrame(cashflow_data['financials'])
+        
+        return income_df, balance_df, cashflow_df
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        return None, None, None
 
 # Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
@@ -60,15 +75,18 @@ ticker = st.text_input("Enter a company ticker (e.g., TSLA for Tesla):")
 if ticker:
     try:
         income_df, balance_df, cashflow_df = get_financials(ticker)
-        ratios = analyze_financials(income_df, balance_df, cashflow_df)
-        summary = classify_investment(ratios)
-        
-        st.subheader(f"Analysis for {ticker.upper()}:")
-        st.write(f"Net Profit Margin: {ratios['Net Profit Margin']:.2f}")
-        st.write(f"Debt-to-Equity Ratio: {ratios['Debt-to-Equity Ratio']:.2f}")
-        st.write(f"Return on Equity: {ratios['Return on Equity (ROE)']:.2f}")
-        st.write(f"Current Ratio: {ratios['Current Ratio']:.2f}")
-        st.write(f"Free Cash Flow: {ratios['Free Cash Flow']:.2f}")
-        st.write(f"Investment Decision: **{summary}**")
+        if income_df is not None and balance_df is not None and cashflow_df is not None:
+            ratios = analyze_financials(income_df, balance_df, cashflow_df)
+            summary = classify_investment(ratios)
+            
+            st.subheader(f"Analysis for {ticker.upper()}:")
+            st.write(f"Net Profit Margin: {ratios['Net Profit Margin']:.2f}")
+            st.write(f"Debt-to-Equity Ratio: {ratios['Debt-to-Equity Ratio']:.2f}")
+            st.write(f"Return on Equity: {ratios['Return on Equity (ROE)']:.2f}")
+            st.write(f"Current Ratio: {ratios['Current Ratio']:.2f}")
+            st.write(f"Free Cash Flow: {ratios['Free Cash Flow']:.2f}")
+            st.write(f"Investment Decision: **{summary}**")
+        else:
+            st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
     except Exception as e:
-        st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
+        st.error(f"An error occurred: {str(e)}")
