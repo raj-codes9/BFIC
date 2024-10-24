@@ -6,36 +6,29 @@ import requests
 api_key = 's561z0EFing83mxqzi8E2J7s68CVbaXV'
 
 # Get financial data for a company
-def analyze_financials(income_df, balance_df, cashflow_df):
-    # Access values carefully and handle missing data
-    net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
-    revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
-
-    # Ensure individual values for total debt and total equity
-    total_debt = pd.to_numeric(balance_df['Total Debt'].iloc[0], errors='coerce') if 'Total Debt' in balance_df else 0
-    total_equity = pd.to_numeric(balance_df['Total Equity'].iloc[0], errors='coerce') if 'Total Equity' in balance_df else 0
-    total_assets = pd.to_numeric(balance_df['Total Assets'].iloc[0], errors='coerce') if 'Total Assets' in balance_df else 1  # Prevent division by zero
-    free_cash_flow = pd.to_numeric(cashflow_df['Free Cash Flow'].iloc[0], errors='coerce') if 'Free Cash Flow' in cashflow_df else 0
-
-    # Check values before calculations
-    st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
-
-    ratios = {}
-    ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
-
-    # Avoid dividing by zero for debt-to-equity and ROE
-    if total_equity != 0:
-        ratios['Debt-to-Equity Ratio'] = total_debt / total_equity
-        ratios['Return on Equity (ROE)'] = net_income / total_equity
-    else:
-        ratios['Debt-to-Equity Ratio'] = None  # Or some meaningful message
-        ratios['Return on Equity (ROE)'] = None
-
-    ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else None
-    ratios['Free Cash Flow'] = free_cash_flow
-
-    return ratios
+def get_financials(ticker):
+    try:
+        # Fetching income statement data
+        url_income = f'https://financialmodelingprep.com/api/v3/financials/income-statement/{ticker}?apikey={api_key}'
+        income_data = requests.get(url_income).json()
         
+        # Fetching balance sheet data
+        url_balance = f'https://financialmodelingprep.com/api/v3/financials/balance-sheet-statement/{ticker}?apikey={api_key}'
+        balance_data = requests.get(url_balance).json()
+        
+        # Fetching cash flow statement data
+        url_cashflow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
+        cashflow_data = requests.get(url_cashflow).json()
+        
+        income_df = pd.DataFrame(income_data['financials'])
+        balance_df = pd.DataFrame(balance_data['financials'])
+        cashflow_df = pd.DataFrame(cashflow_data['financials'])
+        
+        return income_df, balance_df, cashflow_df
+    except Exception as e:
+        st.error(f"Error fetching data: {str(e)}")
+        return None, None, None
+
 # Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
     # Access values carefully and handle missing data
@@ -67,7 +60,6 @@ def analyze_financials(income_df, balance_df, cashflow_df):
 
     return ratios
 
-    
 # Classify investment decision
 def classify_investment(ratios):
     summary = []
@@ -113,7 +105,7 @@ if ticker:
             ratios = analyze_financials(income_df, balance_df, cashflow_df)
             summary = classify_investment(ratios)
             
-          # After calculating ratios
+            # After calculating ratios
             st.subheader(f"Analysis for {ticker.upper()}:")
             net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
             debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if ratios['Debt-to-Equity Ratio'] is not None else "N/A (No Equity)"
@@ -126,8 +118,6 @@ if ticker:
             st.write(f"Return on Equity: {return_on_equity}")
             st.write(f"Current Ratio: {current_ratio}")
             st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
-
-
         else:
             st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
     except Exception as e:
