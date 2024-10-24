@@ -17,7 +17,7 @@ def get_financials(ticker):
         url_cash_flow = f'https://financialmodelingprep.com/api/v3/financials/cash-flow-statement/{ticker}?apikey={api_key}'
         cashflow_data = requests.get(url_cash_flow).json()
         
-        # Print the data to check structure
+        # Debugging output to check data structures
         st.write("Income Data:", income_data)
         st.write("Balance Data:", balance_data)
         st.write("Cash Flow Data:", cashflow_data)
@@ -26,6 +26,7 @@ def get_financials(ticker):
         balance_df = pd.DataFrame(balance_data['financials'])
         cashflow_df = pd.DataFrame(cashflow_data['financials'])
 
+        # Check the contents of the DataFrames
         st.write("Income DataFrame:", income_df)
         st.write("Balance DataFrame:", balance_df)
         st.write("Cash Flow DataFrame:", cashflow_df)
@@ -37,13 +38,17 @@ def get_financials(ticker):
         
 # Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
-    # Check if values exist
+    # Access values carefully and handle missing data
     net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
     revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
+
     total_debt = pd.to_numeric(balance_df.get('Total Debt', balance_df.get('Long Term Debt', 0)), errors='coerce')
     total_equity = pd.to_numeric(balance_df.get('Total Equity', 0), errors='coerce')
-    total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Default to 1 to avoid division by zero
+    total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Prevent division by zero
     free_cash_flow = pd.to_numeric(cashflow_df.get('Free Cash Flow', 0), errors='coerce')
+
+    # Check values before calculations
+    st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
 
     ratios = {}
     ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
@@ -70,7 +75,6 @@ def classify_investment(ratios):
 
     return investment_summary
 
-
 # Streamlit web app
 st.title("AI Financial Investment Analyzer")
 ticker = st.text_input("Enter a company ticker (e.g., TSLA for Tesla):")
@@ -82,12 +86,20 @@ if ticker:
             ratios = analyze_financials(income_df, balance_df, cashflow_df)
             summary = classify_investment(ratios)
             
+            # After calculating ratios
             st.subheader(f"Analysis for {ticker.upper()}:")
-            st.write(f"Net Profit Margin: {ratios['Net Profit Margin']:.2f}")
-            st.write(f"Debt-to-Equity Ratio: {ratios['Debt-to-Equity Ratio']:.2f}")
-            st.write(f"Return on Equity: {ratios['Return on Equity (ROE)']:.2f}")
-            st.write(f"Current Ratio: {ratios['Current Ratio']:.2f}")
-            st.write(f"Free Cash Flow: {ratios['Free Cash Flow']:.2f}")
+            net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
+            debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if not pd.isna(ratios['Debt-to-Equity Ratio']) else 0.00
+            return_on_equity = ratios['Return on Equity (ROE)'] if not pd.isna(ratios['Return on Equity (ROE)']) else 0.00
+            current_ratio = ratios['Current Ratio'] if not pd.isna(ratios['Current Ratio']) else 0.00
+            free_cash_flow = ratios['Free Cash Flow'] if not pd.isna(ratios['Free Cash Flow']) else 0.00
+
+            st.write(f"Net Profit Margin: {net_profit_margin:.2f}")
+            st.write(f"Debt-to-Equity Ratio: {debt_to_equity_ratio:.2f}")
+            st.write(f"Return on Equity: {return_on_equity:.2f}")
+            st.write(f"Current Ratio: {current_ratio:.2f}")
+            st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
+            st.write(f"Investment Summary: {summary}")
 
         else:
             st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
