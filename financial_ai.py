@@ -51,10 +51,10 @@ def analyze_financials(income_df, balance_df, cashflow_df):
     st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
 
     ratios = {}
-    ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
-    ratios['Debt-to-Equity Ratio'] = total_debt / total_equity if total_equity != 0 else 0
-    ratios['Return on Equity (ROE)'] = net_income / total_equity if total_equity != 0 else 0
-    ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else 0
+    ratios['Net Profit Margin'] = net_income / revenue if revenue > 0 else 0  # Changed condition to > 0
+    ratios['Debt-to-Equity Ratio'] = total_debt / total_equity if total_equity > 0 else 0  # Changed condition to > 0
+    ratios['Return on Equity (ROE)'] = net_income / total_equity if total_equity > 0 else 0  # Changed condition to > 0
+    ratios['Current Ratio'] = total_assets / total_debt if total_debt > 0 else 0  # Changed condition to > 0
     ratios['Free Cash Flow'] = free_cash_flow
 
     return ratios
