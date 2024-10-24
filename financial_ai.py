@@ -32,22 +32,28 @@ def get_financials(ticker):
         return None, None, None
 
 # Analyze financials
+# Analyze financials
 def analyze_financials(income_df, balance_df, cashflow_df):
     income_df['Net Income'] = pd.to_numeric(income_df['Net Income'], errors='coerce')
     income_df['Revenue'] = pd.to_numeric(income_df['Revenue'], errors='coerce')
-    balance_df['Total Debt'] = pd.to_numeric(balance_df['Total Debt'], errors='coerce')
-    balance_df['Total Equity'] = pd.to_numeric(balance_df['Total Equity'], errors='coerce')
-    cashflow_df['Free Cash Flow'] = pd.to_numeric(cashflow_df['Free Cash Flow'], errors='coerce')
+
+    # Safely retrieve values using .get()
+    total_debt = pd.to_numeric(balance_df.get('Total Debt', balance_df.get('Long Term Debt', 0)), errors='coerce')
+    total_equity = pd.to_numeric(balance_df.get('Total Equity', 0), errors='coerce')
+    total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Default to 1 to avoid division by zero
+    free_cash_flow = pd.to_numeric(cashflow_df.get('Free Cash Flow', 0), errors='coerce')
 
     ratios = {}
-    ratios['Net Profit Margin'] = income_df['Net Income'].iloc[0] / income_df['Revenue'].iloc[0]
-    ratios['Debt-to-Equity Ratio'] = balance_df['Total Debt'].iloc[0] / balance_df['Total Equity'].iloc[0]
-    ratios['Return on Equity (ROE)'] = income_df['Net Income'].iloc[0] / balance_df['Total Equity'].iloc[0]
-    ratios['Current Ratio'] = balance_df['Total Assets'].iloc[0] / balance_df['Total Debt'].iloc[0]
-    ratios['Free Cash Flow'] = cashflow_df['Free Cash Flow'].iloc[0]
-    
+    ratios['Net Profit Margin'] = income_df['Net Income'].iloc[0] / income_df['Revenue'].iloc[0] if income_df['Revenue'].iloc[0] != 0 else 0
+    ratios['Debt-to-Equity Ratio'] = total_debt / total_equity if total_equity != 0 else 0
+    ratios['Return on Equity (ROE)'] = income_df['Net Income'].iloc[0] / total_equity if total_equity != 0 else 0
+    ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else 0
+    ratios['Free Cash Flow'] = free_cash_flow
+
     return ratios
 
+
+# Classify investment decision
 # Classify investment decision
 def classify_investment(ratios):
     investment_summary = "Investment is Good"
@@ -63,6 +69,7 @@ def classify_investment(ratios):
         investment_summary = "Investment is Bad (Negative Free Cash Flow)"
 
     return investment_summary
+
 
 # Streamlit web app
 st.title("AI Financial Investment Analyzer")
