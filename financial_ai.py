@@ -42,39 +42,65 @@ def analyze_financials(income_df, balance_df, cashflow_df):
     net_income = pd.to_numeric(income_df['Net Income'].iloc[0], errors='coerce')
     revenue = pd.to_numeric(income_df['Revenue'].iloc[0], errors='coerce')
 
-    # Use .get method to prevent key errors
-    total_debt = pd.to_numeric(balance_df['Total Debt'].iloc[0] if 'Total Debt' in balance_df else 0, errors='coerce')
-    total_equity = pd.to_numeric(balance_df['Total Equity'].iloc[0] if 'Total Equity' in balance_df else 0, errors='coerce')
-    total_assets = pd.to_numeric(balance_df['Total Assets'].iloc[0] if 'Total Assets' in balance_df else 1, errors='coerce')  # Prevent division by zero
-    free_cash_flow = pd.to_numeric(cashflow_df['Free Cash Flow'].iloc[0] if 'Free Cash Flow' in cashflow_df else 0, errors='coerce')
+    # Adjust to handle missing or zero equity
+    total_debt = pd.to_numeric(balance_df.get('Total Debt', balance_df.get('Long Term Debt', 0)), errors='coerce')
+    total_equity = pd.to_numeric(balance_df.get('Total Equity', 0), errors='coerce')
+    total_assets = pd.to_numeric(balance_df.get('Total Assets', 1), errors='coerce')  # Prevent division by zero
+    free_cash_flow = pd.to_numeric(cashflow_df.get('Free Cash Flow', 0), errors='coerce')
 
     # Check values before calculations
     st.write(f"Net Income: {net_income}, Revenue: {revenue}, Total Debt: {total_debt}, Total Equity: {total_equity}, Total Assets: {total_assets}, Free Cash Flow: {free_cash_flow}")
 
     ratios = {}
-    ratios['Net Profit Margin'] = net_income / revenue if revenue > 0 else 0  # Changed condition to > 0
-    ratios['Debt-to-Equity Ratio'] = total_debt / total_equity if total_equity > 0 else 0  # Changed condition to > 0
-    ratios['Return on Equity (ROE)'] = net_income / total_equity if total_equity > 0 else 0  # Changed condition to > 0
-    ratios['Current Ratio'] = total_assets / total_debt if total_debt > 0 else 0  # Changed condition to > 0
+    ratios['Net Profit Margin'] = net_income / revenue if revenue != 0 else 0
+
+    # Avoid dividing by zero for debt-to-equity and ROE
+    if total_equity != 0:
+        ratios['Debt-to-Equity Ratio'] = total_debt / total_equity
+        ratios['Return on Equity (ROE)'] = net_income / total_equity
+    else:
+        ratios['Debt-to-Equity Ratio'] = None  # Or some meaningful message
+        ratios['Return on Equity (ROE)'] = None
+
+    ratios['Current Ratio'] = total_assets / total_debt if total_debt != 0 else None
     ratios['Free Cash Flow'] = free_cash_flow
 
     return ratios
+
     
 # Classify investment decision
 def classify_investment(ratios):
-    investment_summary = "Investment is Good"
+    summary = []
+    
     if ratios['Net Profit Margin'] < 0.1:
-        investment_summary = "Investment is Bad (Low Profit Margin)"
-    elif ratios['Debt-to-Equity Ratio'] > 1.0:
-        investment_summary = "Investment is Bad (Too Much Debt)"
-    elif ratios['Return on Equity (ROE)'] < 0.15:
-        investment_summary = "Investment is Bad (Low Return on Equity)"
-    elif ratios['Current Ratio'] < 1.5:
-        investment_summary = "Investment is Bad (Poor Liquidity)"
-    elif ratios['Free Cash Flow'] < 0:
-        investment_summary = "Investment is Bad (Negative Free Cash Flow)"
+        summary.append("The company's profit margins are relatively low, meaning it keeps a small portion of its revenue as profit. This could indicate inefficiencies or significant operating expenses.")
+    else:
+        summary.append("The company has a healthy net profit margin, retaining a significant portion of its revenue as profit. This reflects well on its operational efficiency.")
 
+    if ratios['Debt-to-Equity Ratio'] > 1.0:
+        summary.append("The company is highly leveraged, with significant debt compared to equity. This could pose a risk during downturns if it struggles to meet debt obligations.")
+    else:
+        summary.append("The company's debt levels are manageable relative to its equity, suggesting lower financial risk in terms of debt repayment.")
+
+    if ratios['Return on Equity (ROE)'] < 0.15:
+        summary.append("The return on equity is below industry standards, implying the company is not generating sufficient profits from its equity base.")
+    else:
+        summary.append("The company is generating a strong return on equity, showing efficient use of its capital to generate profit.")
+
+    if ratios['Current Ratio'] < 1.5:
+        summary.append("The company's current ratio indicates potential liquidity concerns. It may not have enough current assets to cover its short-term liabilities.")
+    else:
+        summary.append("The company appears to have a comfortable liquidity position, with enough assets to cover its short-term obligations.")
+
+    if ratios['Free Cash Flow'] < 0:
+        summary.append("The company's free cash flow is negative, which may indicate struggles in generating enough cash from operations to fund its activities.")
+    else:
+        summary.append("The company has a healthy positive free cash flow, which is a good indicator of financial health and the ability to invest in growth opportunities.")
+
+    # Combine the list into a cohesive paragraph
+    investment_summary = " ".join(summary)
     return investment_summary
+
 
 # Streamlit web app
 st.title("AI Financial Investment Analyzer")
@@ -87,20 +113,20 @@ if ticker:
             ratios = analyze_financials(income_df, balance_df, cashflow_df)
             summary = classify_investment(ratios)
             
-            # After calculating ratios
-            st.subheader(f"Analysis for {ticker.upper()}:")
-            net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
-            debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if not pd.isna(ratios['Debt-to-Equity Ratio']) else 0.00
-            return_on_equity = ratios['Return on Equity (ROE)'] if not pd.isna(ratios['Return on Equity (ROE)']) else 0.00
-            current_ratio = ratios['Current Ratio'] if not pd.isna(ratios['Current Ratio']) else 0.00
-            free_cash_flow = ratios['Free Cash Flow'] if not pd.isna(ratios['Free Cash Flow']) else 0.00
+          # After calculating ratios
+st.subheader(f"Analysis for {ticker.upper()}:")
+net_profit_margin = ratios['Net Profit Margin'] if not pd.isna(ratios['Net Profit Margin']) else 0.00
+debt_to_equity_ratio = ratios['Debt-to-Equity Ratio'] if ratios['Debt-to-Equity Ratio'] is not None else "N/A (No Equity)"
+return_on_equity = ratios['Return on Equity (ROE)'] if ratios['Return on Equity (ROE)'] is not None else "N/A (No Equity)"
+current_ratio = ratios['Current Ratio'] if ratios['Current Ratio'] is not None else "N/A"
+free_cash_flow = ratios['Free Cash Flow'] if not pd.isna(ratios['Free Cash Flow']) else 0.00
 
-            st.write(f"Net Profit Margin: {net_profit_margin:.2f}")
-            st.write(f"Debt-to-Equity Ratio: {debt_to_equity_ratio:.2f}")
-            st.write(f"Return on Equity: {return_on_equity:.2f}")
-            st.write(f"Current Ratio: {current_ratio:.2f}")
-            st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
-            st.write(f"Investment Summary: {summary}")
+st.write(f"Net Profit Margin: {net_profit_margin:.2f}")
+st.write(f"Debt-to-Equity Ratio: {debt_to_equity_ratio}")
+st.write(f"Return on Equity: {return_on_equity}")
+st.write(f"Current Ratio: {current_ratio}")
+st.write(f"Free Cash Flow: {free_cash_flow:.2f}")
+
 
         else:
             st.error("Unable to retrieve or analyze the financials for the given company ticker. Please check the ticker and try again.")
